@@ -56,8 +56,13 @@ export function computeStats(input: {
 }): Stats {
   const { profiles, posts, captions, votes, jokeVotes } = input;
   const now = input.now ?? new Date();
+  // Rank lists count per account; two accounts with the same name get their email added
+  // so they are not merged into one row.
+  const baseName = (p: ProfileRow) => [p.first_name, p.last_name].filter(Boolean).join(" ") || p.email || "Unnamed";
+  const nameCount = countBy(profiles, baseName);
+  const shared = new Set(nameCount.filter((n) => n.count > 1).map((n) => n.name));
   const nameOf = new Map(
-    profiles.map((p) => [p.id, [p.first_name, p.last_name].filter(Boolean).join(" ") || p.email || "Unnamed"]),
+    profiles.map((p) => [p.id, shared.has(baseName(p)) && p.email ? `${baseName(p)} (${p.email})` : baseName(p)]),
   );
 
   // Votes per day, last 14 days (caption + joke votes together).
