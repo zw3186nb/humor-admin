@@ -7,9 +7,19 @@ export const metadata = { title: "Dashboard | Three Takes Admin" };
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 
-function Card({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
+function Card({
+  title,
+  note,
+  wide,
+  children,
+}: {
+  title: string;
+  note?: string;
+  wide?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-[var(--surface)] p-5">
+    <section className={`rounded-2xl border border-white/10 bg-[var(--surface)] p-5 ${wide ? "lg:col-span-2" : ""}`}>
       <h2 className="text-sm font-semibold">{title}</h2>
       {note && <p className="mt-0.5 text-xs text-[var(--muted)]">{note}</p>}
       <div className="mt-4">{children}</div>
@@ -225,21 +235,24 @@ export default async function Dashboard() {
         <Card title="When do people vote?" note="Every vote, by hour of day. Lighter = more votes.">
           <VotesByHour hours={s.byHour} />
         </Card>
-        <Card title="Does length matter?" note="Average length of winning captions vs the ones they beat.">
+        <Card
+          title="Does length matter?"
+          note="On each photo, the caption with the most votes (highest net score) vs the other captions on that photo."
+        >
           {lengthGap === null ? (
             <p className="text-sm text-[var(--muted)]">Not enough decided photos yet.</p>
           ) : (
             <div>
               <p className="text-2xl font-semibold tracking-tight">
-                Winners are {Math.abs(lengthGap)} characters {lengthGap >= 0 ? "longer" : "shorter"}
+                Most-voted captions are {Math.abs(lengthGap)} characters {lengthGap >= 0 ? "longer" : "shorter"}
               </p>
               <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-xl bg-white/5 p-3">
-                  <dt className="text-xs text-[var(--muted)]">Winning captions</dt>
+                  <dt className="text-xs text-[var(--muted)]">Most-voted caption, on average</dt>
                   <dd className="mt-1 text-xl font-semibold tabular-nums">{s.lengthWinners} chars</dd>
                 </div>
                 <div className="rounded-xl bg-white/5 p-3">
-                  <dt className="text-xs text-[var(--muted)]">The rest</dt>
+                  <dt className="text-xs text-[var(--muted)]">Other captions, on average</dt>
                   <dd className="mt-1 text-xl font-semibold tabular-nums">{s.lengthOthers} chars</dd>
                 </div>
               </dl>
@@ -258,11 +271,8 @@ export default async function Dashboard() {
         <Card title="Top photographers" note="Members by number of photos posted.">
           <RankList items={s.topPosters} empty="No photos yet." />
         </Card>
-        <Card title="Where photos are taken" note="Locations the AI recognized in the photos.">
+        <Card wide title="Where photos are taken" note="Locations the AI recognized in the photos.">
           <RankList items={s.locations} empty="No locations recognized yet." />
-        </Card>
-        <Card title="AI models used" note="Which model wrote the captions (or whether an admin did).">
-          <RankList items={s.models} empty="No captions yet." />
         </Card>
       </div>
 

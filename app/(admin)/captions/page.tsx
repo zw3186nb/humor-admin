@@ -1,23 +1,26 @@
 import Link from "next/link";
 import { CaptionCreator } from "@/components/caption-creator";
 import { CaptionEditor } from "@/components/caption-editor";
+import { MemeCreator } from "@/components/meme-creator";
+import { PhotoTools } from "@/components/photo-tools";
 import { VoiceTag } from "@/components/voice-tag";
+import { requireAdmin } from "@/lib/admin";
 import { formatTime, getCaptions, getPosts, photoUrl } from "@/lib/data";
 import { voiceLabel } from "@/lib/voice-style";
 import { VOICE_KEYS } from "@/lib/voices";
 
-export const metadata = { title: "AI captions | Three Takes Admin" };
+export const metadata = { title: "Memes & captions | Three Takes Admin" };
 
 const PAGE_SIZE = 12;
 
-/** CREATE / READ / UPDATE / DELETE the AI-generated captions, grouped by photo. */
+/** CREATE / READ / UPDATE / DELETE photos (memes) and their AI-generated captions. */
 export default async function CaptionsPage({ searchParams }: PageProps<"/captions">) {
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q.trim() : "";
   const postFilter = Number(params.post);
   const page = Math.max(1, Number(params.page) || 1);
 
-  const [posts, captions] = await Promise.all([getPosts(), getCaptions()]);
+  const [{ user }, posts, captions] = await Promise.all([requireAdmin(), getPosts(), getCaptions()]);
   const byPost = new Map<number, typeof captions.data>();
   for (const c of captions.data) byPost.set(c.post_id, [...(byPost.get(c.post_id) ?? []), c]);
 
@@ -38,8 +41,8 @@ export default async function CaptionsPage({ searchParams }: PageProps<"/caption
     <div className="flex flex-col gap-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-[var(--muted)]">AI-generated media · create · read · update · delete</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">AI captions</h1>
+          <p className="font-mono text-xs uppercase tracking-[0.2em] text-[var(--muted)]">Photos & AI-generated captions · create · read · update · delete</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Memes &amp; captions</h1>
           <p className="mt-1 text-sm text-[var(--muted)]">
             {captions.data.length} captions on {posts.data.length} photos
             {missing > 0 && <> · {missing} missing {missing === 1 ? "voice" : "voices"} you can create</>}.
@@ -55,6 +58,8 @@ export default async function CaptionsPage({ searchParams }: PageProps<"/caption
           <button className="cursor-pointer rounded-lg border border-white/15 px-3 py-2 text-sm hover:border-white/40">Search</button>
         </form>
       </header>
+
+      <MemeCreator userId={user.id} />
 
       {(posts.error || captions.error) && (
         <p role="alert" className="text-sm text-red-300">Could not load: {posts.error ?? captions.error}</p>
@@ -80,6 +85,7 @@ export default async function CaptionsPage({ searchParams }: PageProps<"/caption
                 </p>
                 {post.ai_location && <p className="mt-0.5 text-xs text-[var(--muted)]">📍 {post.ai_location}</p>}
                 {post.note && <p className="mt-0.5 text-xs italic text-[var(--muted)]">“{post.note}”</p>}
+                <PhotoTools key={`${post.id}-${post.note}`} postId={post.id} userId={user.id} note={post.note} />
               </div>
               <ol className="flex flex-col divide-y divide-white/5">
                 {VOICE_KEYS.map((voice) => {

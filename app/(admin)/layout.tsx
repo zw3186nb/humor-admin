@@ -11,7 +11,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:gap-10 lg:py-10">
-      <aside className="flex shrink-0 flex-col gap-5 lg:sticky lg:top-10 lg:h-[calc(100vh-5rem)] lg:w-52">
+      <aside className="flex shrink-0 flex-col gap-5 lg:sticky lg:top-10 lg:h-[calc(100vh-5rem)] lg:w-56 lg:overflow-y-auto">
         <div className="flex items-center gap-2.5">
           <span aria-hidden className="flex h-8 w-8 items-center justify-center rounded-lg bg-white font-mono text-sm font-bold text-black">
             3
