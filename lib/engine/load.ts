@@ -1,4 +1,4 @@
-import { engineDb } from "@/lib/engine/db";
+import { engineDb, safeError } from "@/lib/engine/db";
 import { REFS, type RefName, type Resource } from "@/lib/engine/resources";
 
 export type Lookup = Record<string, Map<string, string>>;
@@ -32,7 +32,7 @@ export async function loadRows(
   for (const o of resource.order) query = query.order(o.column, { ascending: o.ascending ?? true });
   const from = (opts.page - 1) * resource.pageSize;
   const { data, count, error } = await query.range(from, from + resource.pageSize - 1);
-  return { rows: (data ?? []) as unknown as Record<string, unknown>[], total: count ?? 0, error: error?.message ?? null };
+  return { rows: (data ?? []) as unknown as Record<string, unknown>[], total: count ?? 0, error: safeError(error?.message) };
 }
 
 /** Reads "a.b.c" out of a row with embedded relations (which may be arrays). */

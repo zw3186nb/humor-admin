@@ -11,16 +11,38 @@ import { createClient as createSupabaseClient, type SupabaseClient } from "@supa
 
 let client: SupabaseClient | null = null;
 
+// Keys never contain whitespace; strip any that sneaked in when pasting.
+const url = () => (process.env.FUNNYSTUDY_SUPABASE_URL ?? "").trim();
+const secret = () => (process.env.FUNNYSTUDY_SECRET_KEY ?? "").replace(/\s+/g, "");
+
 export function engineConfigured() {
-  return Boolean(process.env.FUNNYSTUDY_SUPABASE_URL && process.env.FUNNYSTUDY_SECRET_KEY);
+  return Boolean(url() && secret());
 }
 
 export function engineDb(): SupabaseClient {
   if (!engineConfigured()) throw new Error("The humor engine database is not configured.");
-  client ??= createSupabaseClient(process.env.FUNNYSTUDY_SUPABASE_URL!, process.env.FUNNYSTUDY_SECRET_KEY!, {
+  client ??= createSupabaseClient(url(), secret(), {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   return client;
+}
+
+/**
+ * Error text that is safe to show on a page: the secret key (or anything
+ * that looks like one) is never included, even if a library echoes it.
+ */
+export function safeError(message: string | null | undefined): string | null {
+  if (!message) return null;
+  let text = message;
+  const raw = process.env.FUNNYSTUDY_SECRET_KEY ?? "";
+  for (const part of [raw, secret(), ...raw.split(/\s+/)]) {
+    if (part.length >= 6) text = text.split(part).join("[hidden]");
+  }
+  text = text.replace(/sb_secret_[^\s"']*/g, "[hidden]");
+  if (/header/i.test(text) && text.includes("[hidden]")) {
+    return "Could not connect to the humor engine database: check the FUNNYSTUDY_SECRET_KEY setting.";
+  }
+  return text;
 }
 
 /**

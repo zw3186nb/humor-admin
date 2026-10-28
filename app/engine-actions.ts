@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/app/actions";
 import { requireAdmin } from "@/lib/admin";
-import { engineActorId, engineConfigured, engineDb } from "@/lib/engine/db";
+import { engineActorId, engineConfigured, engineDb, safeError } from "@/lib/engine/db";
 import { getResource, type Field } from "@/lib/engine/resources";
 
 function readField(field: Field, formData: FormData): { value?: unknown; error?: string } {
@@ -43,7 +43,7 @@ export async function saveEngineRow(
     values[field.key] = value;
   }
 
-  const actor = await engineActorId(profile.email);
+  const actor = await engineActorId(profile.email).catch(() => null);
   if (!actor) return { ok: false, message: "No matching profile in the humor engine database to record this change." };
   const db = engineDb();
   const now = new Date().toISOString();
@@ -55,7 +55,7 @@ export async function saveEngineRow(
           .from(resource.table)
           .update({ ...values, modified_by_user_id: actor, modified_datetime_utc: now })
           .eq("id", id!);
-  if (error) return { ok: false, message: error.code === "23505" ? "That already exists." : error.message };
+  if (error) return { ok: false, message: error.code === "23505" ? "That already exists." : safeError(error.message)! };
 
   revalidatePath(`/engine/${slug}`);
   revalidatePath("/engine");
@@ -73,7 +73,7 @@ export async function deleteEngineRow(slug: string, id: string): Promise<ActionR
   if (error) {
     return {
       ok: false,
-      message: error.code === "23503" ? "Can't delete: other rows still use this one." : error.message,
+      message: error.code === "23503" ? "Can't delete: other rows still use this one." : safeError(error.message)!,
     };
   }
   if (!data?.length) return { ok: false, message: "Nothing was deleted." };
